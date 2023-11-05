@@ -1,10 +1,12 @@
 package edu.upao.pe.ilovetravelfinal.repositories;
 
-import edu.upao.pe.ilovetravelfinal.models.User;
+
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import edu.upao.pe.ilovetravelfinal.models.User;
 
-@Repository
+import java.util.Optional;
+
 public interface UserRepository extends JpaRepository<User, Long> {
-
+    Optional<User> findByEmail(String email);
+    Optional<User> findByFirstNameAndLastName(String firstName, String lastName);
 }

@@ -1,12 +1,14 @@
 package edu.upao.pe.ilovetravelfinal.models;
 
+import ch.qos.logback.core.net.SMTPAppenderBase;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
-import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -20,7 +22,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userid;
     @Getter
-    @Column(name = "firs_name")
+    @Column(name = "first_name")
     private String firstName;
     @Getter
     @Column(name = "last_name")
@@ -40,6 +42,12 @@ public class User {
     @Getter
     @Column(name = "registration_date")
     private LocalDate registrationDate;
+    @Transient
+    private long messageCount;
+    @Transient
+    private List<ChatMessage> sentMessages;
+    @Transient
+    private List<ChatMessage> receivedMessages;
 
     public Long getUserid() {
         return userid;
@@ -106,4 +114,27 @@ public class User {
         this.registrationDate = registrationDate;
     }
 
+    public long getMessageCount() {
+        return messageCount;
+    }
+
+    public void setMessageCount(long messageCount) {
+        this.messageCount = messageCount;
+    }
+
+    public List<ChatMessage> getSentMessages() {
+        return sentMessages;
+    }
+
+    public void setSentMessages(List<ChatMessage> sentMessages) {
+        this.sentMessages = sentMessages;
+    }
+
+    public List<ChatMessage> getReceivedMessages() {
+        return receivedMessages;
+    }
+
+    public void setReceivedMessages(List<ChatMessage> receivedMessages) {
+        this.receivedMessages = receivedMessages;
+    }
 }

@@ -1,22 +1,22 @@
 package edu.upao.pe.ilovetravelfinal.services;
 
+import org.springframework.stereotype.Service;
 import edu.upao.pe.ilovetravelfinal.models.User;
 import edu.upao.pe.ilovetravelfinal.repositories.UserRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
-public class UserService {
+public class UserService{
     private final UserRepository userRepository;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+
+    public User getUserByFirstNameAndLastName(String firstName, String lastName) {
+        return userRepository.findByFirstNameAndLastName(firstName, lastName).orElse(null);
     }
 
     public List<User> getAllUsers(){
@@ -33,5 +33,21 @@ public class UserService {
 
     public void deleteUserById(Long userid){
         userRepository.deleteById(userid);
+    }
+
+    public User verifyAccount(String email, String password) {
+
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            // Verificar si la contraseña coincide
+            if (user.getPassword().equals(password)) {
+                // Las credenciales son válidas
+                return user;
+            }
+        }
+        // Si no se encontró el usuario o las credenciales no coinciden, devuelve null
+        return null;
     }
 }
