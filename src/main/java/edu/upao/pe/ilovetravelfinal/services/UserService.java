@@ -34,4 +34,20 @@ public class UserService {
     public void deleteUserById(Long userid){
         userRepository.deleteById(userid);
     }
+
+    public User verifyAccount(String email, String password) {
+
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            // Verificar si la contraseña coincide
+            if (user.getPassword().equals(password)) {
+                // Las credenciales son válidas
+                return user;
+            }
+        }
+        // Si no se encontró el usuario o las credenciales no coinciden, devuelve null
+        return null;
+    }
 }
