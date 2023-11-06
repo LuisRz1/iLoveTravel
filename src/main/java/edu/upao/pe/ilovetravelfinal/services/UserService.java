@@ -19,21 +19,28 @@ public class UserService{
     public List<User> getAllUsers(){
         return userRepository.findAll();
     }
+    private boolean isEmptyOrWhitespace(String value) {
+        return value == null || value.trim().isEmpty();
+    }
     public User addUser(User user){
         return userRepository.save(user);
     }
     public User verifyAccount(String email, String password) {
-
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            // Verificar si la contraseña coincide
-            if (user.getPassword().equals(password)) {
-                // Las credenciales son válidas
-                return user;
-            }
+        if (isEmptyOrWhitespace(email) || isEmptyOrWhitespace(password)) {
+            throw new IllegalStateException("Correo y contraseña son campos requeridos");
         }
-        // Si no se encontró el usuario o las credenciales no coinciden, devuelve null
-        return null;
+        List<User> existingUserByCount = userRepository.findByEmail(email);
+        if (!existingUserByCount.isEmpty()) {
+            User useremail = existingUserByCount.get(0);
+            // Verificar si la contraseña coincide
+            if (useremail.getPassword().equals(password)) {
+                // Las credenciales son válidas
+                return useremail;
+            }else{
+                throw new IllegalStateException("contraseña incorrecta");
+            }
+        }else{
+            throw new IllegalStateException("Correo o contraseña es incorrecta");
+        }
     }
 }

@@ -37,48 +37,47 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> loginData) {
-        User user = userService.verifyAccount(loginData.get("email"), loginData.get("password"));
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
+        try {
+            User user = userService.verifyAccount(loginRequest.get("email"), loginRequest.get("password"));
 
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            // Obtén la cantidad total de mensajes recibidos
+            int receivedMessageCount = chatMessageService.getReceivedMessagesCount(user);
+
+            // Obtén la lista de mensajes recibidos
+            List<ChatMessage> receivedMessages = chatMessageService.getReceivedMessagesForUser(user);
+
+            // Agrupa los mensajes por el nombre del remitente
+            Map<String, List<String>> receivedMessagesMap = new LinkedHashMap<>();
+            for (ChatMessage message : receivedMessages) {
+                String senderName = message.getSender().getFirstName() + " " + message.getSender().getLastName();
+                receivedMessagesMap.computeIfAbsent(senderName, key -> new ArrayList<>()).add(message.getMessage());
+            }
+
+            // Crea un objeto JSON para la respuesta
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("Sesion iniciada Bienvenido ->", user.getFirstName());
+
+            Map<String, Object> aboutUser = new LinkedHashMap<>();
+            aboutUser.put("Nombre Completo", user.getFirstName() + " " + user.getLastName());
+            aboutUser.put("Email", user.getEmail());
+            aboutUser.put("Nacionalidad", user.getNationality());
+            aboutUser.put("Fecha de Cumpleaños", user.getBirthdate().toString());
+
+            List<Map<String, Object>> chatsList = new ArrayList<>();
+            for (Map.Entry<String, List<String>> entry : receivedMessagesMap.entrySet()) {
+                Map<String, Object> chatData = new LinkedHashMap<>();
+                chatData.put("Enviado por", entry.getKey());
+                chatData.put("Mensaje(s)", entry.getValue());
+                chatsList.add(chatData);
+            }
+            response.put("Acerca de", aboutUser);
+            response.put("Cantidad de mensajes recibidos", receivedMessageCount);
+            response.put("Chats", chatsList);
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalStateException sms) {
+            return new ResponseEntity<>(sms.getMessage(), HttpStatus.UNAUTHORIZED);
         }
-
-        // Obtén la cantidad total de mensajes recibidos
-        int receivedMessageCount = chatMessageService.getReceivedMessagesCount(user);
-
-        // Obtén la lista de mensajes recibidos
-        List<ChatMessage> receivedMessages = chatMessageService.getReceivedMessagesForUser(user);
-
-        // Agrupa los mensajes por el nombre del remitente
-        Map<String, List<String>> receivedMessagesMap = new LinkedHashMap<>();
-        for (ChatMessage message : receivedMessages) {
-            String senderName = message.getSender().getFirstName() + " " + message.getSender().getLastName();
-            receivedMessagesMap.computeIfAbsent(senderName, key -> new ArrayList<>()).add(message.getMessage());
-        }
-
-        // Crea un objeto JSON para la respuesta
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("Sesion iniciada Bienvenido ->", user.getFirstName());
-
-        Map<String, Object> aboutUser = new LinkedHashMap<>();
-        aboutUser.put("Nombre Completo", user.getFirstName() + " " + user.getLastName());
-        aboutUser.put("Email", user.getEmail());
-        aboutUser.put("Nacionalidad", user.getNationality());
-        aboutUser.put("Fecha de Cumpleaños", user.getBirthdate());
-
-        List<Map<String, Object>> chatsList = new ArrayList<>();
-        for (Map.Entry<String, List<String>> entry : receivedMessagesMap.entrySet()) {
-            Map<String, Object> chatData = new LinkedHashMap<>();
-            chatData.put("Enviado por", entry.getKey());
-            chatData.put("Mensaje(s)", entry.getValue());
-            chatsList.add(chatData);
-        }
-        response.put("Acerca de", aboutUser);
-        response.put("Cantidad de mensajes recibidos -> ", receivedMessageCount);
-        response.put("Chats", chatsList);
-
-
-        return ResponseEntity.ok(response);
     }
 }
