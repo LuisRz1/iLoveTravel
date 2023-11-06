@@ -1,16 +1,15 @@
 package edu.upao.pe.ilovetravelfinal.services;
 
+import edu.upao.pe.ilovetravelfinal.dtos.UserDTO;
 import edu.upao.pe.ilovetravelfinal.models.User;
 import edu.upao.pe.ilovetravelfinal.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
-import javax.security.auth.login.LoginException;
-import java.nio.channels.IllegalSelectorException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -21,30 +20,60 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<User> getAllUsers(){
-        return userRepository.findAll();
+    public List<UserDTO> getAllUserProfiles() {
+        List<User> users = userRepository.findAll();
+        List<UserDTO> userProfiles = new ArrayList<>();
+        for (User user : users) {
+            userProfiles.add(new UserDTO(user));
+        }
+
+        return userProfiles;
     }
 
-    public Optional<User> getUserById(Long userid){
-        return userRepository.findById(userid);
-    }
+    public List<UserDTO> searchUsers(User user) {
+        String firstName = user.getFirstName();
+        String lastName = user.getLastName();
 
-    public User addUser(User user){
+        // Realizar la búsqueda en la base de datos
+        List<User> users = userRepository.findByFirstNameAndLastName(firstName, lastName);
+
+        if (users.isEmpty()) {
+            throw new IllegalStateException("Usuario no encontrado");
+        }
+
+        // Mapear los resultados a UserDTO y devolverlos
+        List<UserDTO> userDTOs = users.stream()
+                .map(UserDTO::new)  // Aquí asumo que tienes un constructor en UserDTO que acepta un User
+                .collect(Collectors.toList());
+
+        return userDTOs;
+    }
+    private boolean isEmptyOrWhitespace(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+    public String addUser(User user){
         List<User> existingUserByEmail = userRepository.findByEmail(user.getEmail());
+        user.setRegistrationDate(Instant.now());
+        if (isEmptyOrWhitespace(user.getFirstName()) || isEmptyOrWhitespace(user.getLastName()) || isEmptyOrWhitespace(user.getEmail()) || isEmptyOrWhitespace(user.getNationality()) || isEmptyOrWhitespace(user.getPassword()) || user.getBirthdate() == null) {
+            throw new IllegalStateException("Todos los campos son requeridos");
+        }
         if(!existingUserByEmail.isEmpty()) {
             throw new IllegalStateException("El correo que ingresaste ya esta en uso");
         }
-        System.out.println("El usuario se registro correctamente");
-        return userRepository.save(user);
-    }
+        if(user.getPassword() != null && user.getPassword().length() > 8){
+            throw new IllegalStateException("La contraseña debe tener menos de 8 caracteres");
+        }
 
-    public void deleteUserById(Long userid){
-        userRepository.deleteById(userid);
+        userRepository.save(user);
+        return "Usuario registrado correctamente";
+
     }
 
     public User verifyAccount(String email, String password) {
+        if (isEmptyOrWhitespace(email) || isEmptyOrWhitespace(password)) {
+            throw new IllegalStateException("Correo y contraseña son campos requeridos");
+        }
         List<User> existingUserByCount = userRepository.findByEmail(email);
-        System.out.println(email);
         if (!existingUserByCount.isEmpty()) {
             User useremail = existingUserByCount.get(0);
             // Verificar si la contraseña coincide

@@ -1,5 +1,6 @@
 package edu.upao.pe.ilovetravelfinal.controllers;
 
+import edu.upao.pe.ilovetravelfinal.dtos.UserDTO;
 import edu.upao.pe.ilovetravelfinal.models.User;
 import edu.upao.pe.ilovetravelfinal.services.UserService;
 import org.springframework.http.HttpStatus;
@@ -19,30 +20,29 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
-    @GetMapping
-    private List<User> getAllUsers(){
-        return userService.getAllUsers();
+    @GetMapping("/profiles")
+    public List<UserDTO> getAllUserProfiles() {
+        return userService.getAllUserProfiles();
     }
 
-    @GetMapping("/{userid}")
-    public User getUserById(@PathVariable Long userid){
-        return userService.getUserById(userid).orElse(new User());
+    @PostMapping("/search")
+    public ResponseEntity<?> searchUsers(@RequestBody User user) {
+        try {
+            List<UserDTO> users = userService.searchUsers(user);
+            return ResponseEntity.ok(users);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> addUser(@RequestBody User user){
         try{
-            User newUser = userService.addUser(user);
-            user.setRegistrationDate(Instant.now());
+            String newUser = userService.addUser(user);
             return new ResponseEntity<>(newUser, HttpStatus.CREATED);
         } catch (IllegalStateException sms){
-            return new ResponseEntity<>(sms.getMessage(), HttpStatus.CONFLICT);
+            return new ResponseEntity<>(sms.getMessage(), HttpStatus.BAD_REQUEST);
         }
-    }
-
-    @DeleteMapping("/{userid}")
-    public void deleteUser(@PathVariable Long userid){
-        userService.deleteUserById(userid);
     }
 
     @PostMapping("/login")
