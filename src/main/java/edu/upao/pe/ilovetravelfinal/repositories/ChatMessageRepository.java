@@ -9,10 +9,6 @@ import java.util.List;
 
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
-    List<ChatMessage> findAllBySenderOrderBySentAtAsc(User sender);
-    List<ChatMessage> findAllByReceiverOrderBySentAtAsc(User receiver);
-
-    long countByReceiver(User receiver);
-
-    List<ChatMessage> findAllBySenderAndReceiverOrderBySentAtAsc(User sender, User receiver);
+    List<ChatMessage>findAllByReceiverOrderByDateSentAsc(User receiver);
+    List<ChatMessage>findAllBySenderAndReceiverOrderByDateSentAsc(User sender, User receiver);
 }

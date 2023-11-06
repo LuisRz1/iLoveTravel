@@ -10,6 +10,8 @@ import edu.upao.pe.ilovetravelfinal.services.ChatMessageService;
 import edu.upao.pe.ilovetravelfinal.services.UserService;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,25 +58,43 @@ public class ChatController {
         chatMessage.setSender(sender);
         chatMessage.setReceiver(receiver);
         chatMessage.setMessage(messageText);
-        chatMessage.setSentAt(Instant.now());
+        chatMessage.setDateSent(Instant.now());
 
-        ChatMessage savedMessage = chatMessageService.saveChatMessage(chatMessage);
+        chatMessageService.saveChatMessage(chatMessage);
 
         return ResponseEntity.ok(new ApiResponse("Mensaje enviado exitosamente"));
     }
 
-    @GetMapping("/messages/{senderId}/{receiverId}")
-    public ResponseEntity<List<ChatMessage>> getChatMessages(@PathVariable Long senderId, @PathVariable Long receiverId) {
-        // Busca los objetos User correspondientes a los IDs
-        User sender = userService.getUserById(senderId).orElse(null);
-        User receiver = userService.getUserById(receiverId).orElse(null);
+    @GetMapping("/getMessages")
+    public ResponseEntity<Map<String, Object>> getMessages(
+            @RequestParam("senderFirstName") String senderFirstName,
+            @RequestParam("senderLastName") String senderLastName,
+            @RequestParam("receiverFirstName") String receiverFirstName,
+            @RequestParam("receiverLastName") String receiverLastName) {
+
+        // Busca al usuario emisor y receptor por sus nombres
+        User sender = userService.getUserByFirstNameAndLastName(senderFirstName, senderLastName);
+        User receiver = userService.getUserByFirstNameAndLastName(receiverFirstName, receiverLastName);
 
         if (sender == null || receiver == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        // Llama al método del servicio para obtener mensajes entre los usuarios
-        List<ChatMessage> messages = chatMessageService.getChatMessages(sender, receiver);
-        return ResponseEntity.ok(messages);
+        // Busca los mensajes enviados por el emisor al receptor
+        List<ChatMessage> messages = chatMessageService.getMessagesBySenderAndReceiver(sender, receiver);
+
+        // Crea un objeto JSON para la respuesta
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("Bienvenido a su chat con ", receiver.getFirstName() + " " + receiver.getLastName());
+
+        // Crea una lista de mensajes
+        List<String> messageList = new ArrayList<>();
+
+        for (ChatMessage chatMessage : messages) {
+            messageList.add(chatMessage.getMessage());
+        }
+        response.put("messages", messageList);
+
+        return ResponseEntity.ok(response);
     }
 }

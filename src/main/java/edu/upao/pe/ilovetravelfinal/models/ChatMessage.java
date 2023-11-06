@@ -17,35 +17,48 @@ public class ChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne
     @JoinColumn(name = "sender_id")
     private User sender;
-
     @ManyToOne
     @JoinColumn(name = "receiver_id")
     private User receiver;
-
+    @Getter
     @Column(name = "message")
     private String message;
+    @Column(name = "date_Sent")
+    private Instant dateSent;
 
-    @Column(name = "sent_at")
-    private Instant sentAt;
+    public User getSender() {
+        return sender;
+    }
 
     public void setSender(User sender) {
         this.sender = sender;
+    }
+
+    public User getReceiver() {
+        return receiver;
     }
 
     public void setReceiver(User receiver) {
         this.receiver = receiver;
     }
 
+    public String getMessage() {
+        return message;
+    }
+
     public void setMessage(String message) {
         this.message = message;
     }
 
-    public void setSentAt(Instant sentAt) {
-        this.sentAt = sentAt;
+    public Instant getDateSent() {
+        return dateSent;
+    }
+
+    public void setDateSent(Instant dateSent) {
+        this.dateSent = dateSent;
     }
 
 // Getters y setters

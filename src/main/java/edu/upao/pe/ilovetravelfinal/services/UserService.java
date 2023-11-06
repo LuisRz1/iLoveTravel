@@ -10,35 +10,21 @@ import java.util.Optional;
 @Service
 public class UserService{
     private final UserRepository userRepository;
-
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-
     public User getUserByFirstNameAndLastName(String firstName, String lastName) {
         return userRepository.findByFirstNameAndLastName(firstName, lastName).orElse(null);
     }
-
     public List<User> getAllUsers(){
         return userRepository.findAll();
     }
-
-    public Optional<User> getUserById(Long userid){
-        return userRepository.findById(userid);
-    }
-
     public User addUser(User user){
         return userRepository.save(user);
     }
-
-    public void deleteUserById(Long userid){
-        userRepository.deleteById(userid);
-    }
-
     public User verifyAccount(String email, String password) {
 
         Optional<User> optionalUser = userRepository.findByEmail(email);
-
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             // Verificar si la contraseña coincide

@@ -8,6 +8,9 @@ import edu.upao.pe.ilovetravelfinal.models.User;
 import edu.upao.pe.ilovetravelfinal.services.ChatMessageService;
 import edu.upao.pe.ilovetravelfinal.services.UserService;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,54 +25,60 @@ public class UserController {
         this.userService = userService;
         this.chatMessageService = chatMessageService; // Inyectar el servicio
     }
-
     @GetMapping
     private List<User> getAllUsers(){
         return userService.getAllUsers();
     }
-
-    @GetMapping("/{userid}")
-    public ResponseEntity<User> getUserById(@PathVariable Long userid) {
-        User user = userService.getUserById(userid).orElse(null);
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-
-        // Calcula la cantidad de mensajes enviados y recibidos por el usuario
-        List<ChatMessage> sentMessages = chatMessageService.getSentMessagesForUser(user);
-        List<ChatMessage> receivedMessages = chatMessageService.getReceivedMessagesForUser(user);
-
-        user.setSentMessages(sentMessages);
-        user.setReceivedMessages(receivedMessages);
-
-        return ResponseEntity.ok(user);
-    }
-
-
     @PostMapping
     public String addUser(@RequestBody User user){
+        user.setRegistrationDate(Instant.now());
         userService.addUser(user);
         return "Registrado correctamente";
     }
 
-    @DeleteMapping("/{userid}")
-    public void deleteUser(@PathVariable Long userid){
-        userService.deleteUserById(userid);
-    }
-
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@RequestBody Map<String, String> loginRequest) {
-        String email = loginRequest.get("email");
-        String password = loginRequest.get("password");
-        User user = userService.verifyAccount(email, password);
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> loginData) {
+        User user = userService.verifyAccount(loginData.get("email"), loginData.get("password"));
 
-        if (user != null) {
-            String comment = "Sesión Iniciada, Bienvenido -> " + user.getFirstName() + user.getLastName();
-            ApiResponse res = new ApiResponse(comment, user);
-            return new ResponseEntity<>(res, HttpStatus.OK);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
+        // Obtén la cantidad total de mensajes recibidos
+        int receivedMessageCount = chatMessageService.getReceivedMessagesCount(user);
+
+        // Obtén la lista de mensajes recibidos
+        List<ChatMessage> receivedMessages = chatMessageService.getReceivedMessagesForUser(user);
+
+        // Agrupa los mensajes por el nombre del remitente
+        Map<String, List<String>> receivedMessagesMap = new LinkedHashMap<>();
+        for (ChatMessage message : receivedMessages) {
+            String senderName = message.getSender().getFirstName() + " " + message.getSender().getLastName();
+            receivedMessagesMap.computeIfAbsent(senderName, key -> new ArrayList<>()).add(message.getMessage());
+        }
+
+        // Crea un objeto JSON para la respuesta
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("Sesion iniciada Bienvenido ->", user.getFirstName());
+
+        Map<String, Object> aboutUser = new LinkedHashMap<>();
+        aboutUser.put("Nombre Completo", user.getFirstName() + " " + user.getLastName());
+        aboutUser.put("Email", user.getEmail());
+        aboutUser.put("Nacionalidad", user.getNationality());
+        aboutUser.put("Fecha de Cumpleaños", user.getBirthdate());
+
+        List<Map<String, Object>> chatsList = new ArrayList<>();
+        for (Map.Entry<String, List<String>> entry : receivedMessagesMap.entrySet()) {
+            Map<String, Object> chatData = new LinkedHashMap<>();
+            chatData.put("Enviado por", entry.getKey());
+            chatData.put("Mensaje(s)", entry.getValue());
+            chatsList.add(chatData);
+        }
+        response.put("Acerca de", aboutUser);
+        response.put("Cantidad de mensajes recibidos -> ", receivedMessageCount);
+        response.put("Chats", chatsList);
+
+
+        return ResponseEntity.ok(response);
     }
 }

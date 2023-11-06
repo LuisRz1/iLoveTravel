@@ -21,15 +21,14 @@ public class ChatMessageService {
         return chatMessageRepository.save(chatMessage);
     }
 
-    public List<ChatMessage> getChatMessages(User sender, User receiver) {
-        return chatMessageRepository.findAllBySenderAndReceiverOrderBySentAtAsc(sender, receiver);
+    public List<ChatMessage> getMessagesBySenderAndReceiver(User sender, User receiver) {
+        return chatMessageRepository.findAllBySenderAndReceiverOrderByDateSentAsc(sender, receiver);
     }
-
-    public List<ChatMessage> getSentMessagesForUser(User user) {
-        return chatMessageRepository.findAllBySenderOrderBySentAtAsc(user);
+    public List<ChatMessage> getReceivedMessagesForUser(User receiver) {
+        return chatMessageRepository.findAllByReceiverOrderByDateSentAsc(receiver);
     }
-
-    public List<ChatMessage> getReceivedMessagesForUser(User user) {
-        return chatMessageRepository.findAllByReceiverOrderBySentAtAsc(user);
+    public int getReceivedMessagesCount(User user) {
+        List<ChatMessage> receivedMessages = chatMessageRepository.findAllByReceiverOrderByDateSentAsc(user);
+        return receivedMessages.size();
     }
 }
