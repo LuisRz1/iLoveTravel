@@ -6,6 +6,7 @@ import lombok.Getter;
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -39,7 +40,7 @@ public class User {
     private LocalDate birthdate;
     @Getter
     @Column(name = "registration_date")
-    private LocalDate registrationDate;
+    private Instant registrationDate;
 
     public Long getUserid() {
         return userid;
@@ -98,11 +99,11 @@ public class User {
         this.birthdate = birthdate;
     }
 
-    public LocalDate getRegistrationDate() {
+    public Instant getRegistrationDate() {
         return registrationDate;
     }
 
-    public void setRegistrationDate(LocalDate registrationDate) {
+    public void setRegistrationDate(Instant registrationDate) {
         this.registrationDate = registrationDate;
     }
 

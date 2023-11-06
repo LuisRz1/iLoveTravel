@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -28,9 +29,15 @@ public class UserController {
         return userService.getUserById(userid).orElse(new User());
     }
 
-    @PostMapping
-    public void addUser(@RequestBody User user){
-        userService.addUser(user);
+    @PostMapping("/register")
+    public ResponseEntity<?> addUser(@RequestBody User user){
+        try{
+            User newUser = userService.addUser(user);
+            user.setRegistrationDate(Instant.now());
+            return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+        } catch (IllegalStateException sms){
+            return new ResponseEntity<>(sms.getMessage(), HttpStatus.CONFLICT);
+        }
     }
 
     @DeleteMapping("/{userid}")
@@ -39,17 +46,14 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiComment> login(@RequestBody Map<String, String> loginRequest) {
-        String email = loginRequest.get("email");
-        String password = loginRequest.get("password");
-        User user = userService.verifyAccount(email, password);
-
-        if (user != null) {
-            String comment = "Sesión Iniciada, Bienvenido -> " + user.getFirstName() + user.getLastName();
-            ApiComment res = new ApiComment(comment, user);
-            return new ResponseEntity<>(res, HttpStatus.OK);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginRequest) {
+        try {
+            String email = loginRequest.get("email");
+            String password = loginRequest.get("password");
+            User loginuser = userService.verifyAccount(email, password);
+            return new ResponseEntity<>(loginuser, HttpStatus.OK);
+        }catch (IllegalStateException sms){
+            return new ResponseEntity<>(sms.getMessage(), HttpStatus.UNAUTHORIZED);
         }
     }
 }
